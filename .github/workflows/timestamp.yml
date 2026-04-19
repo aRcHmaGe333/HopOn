@@ -1,0 +1,66 @@
+name: APC Cryptographic Timestamp
+
+on:
+  push:
+    branches: [main, master]
+
+jobs:
+  timestamp:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract tree hash and timestamp digest
+        run: |
+          TREE_HASH=$(git rev-parse HEAD^{tree})
+          TREE_DIGEST=$(printf '%s' "$TREE_HASH" | sha512sum | awk '{print $1}')
+          echo "TREE_HASH=$TREE_HASH" >> $GITHUB_ENV
+          echo "TREE_DIGEST=$TREE_DIGEST" >> $GITHUB_ENV
+          echo "Tree hash: $TREE_HASH"
+          echo "Timestamp subject digest: $TREE_DIGEST"
+
+          LAST_MSG=$(git log -1 --pretty=%s)
+          if [[ "$LAST_MSG" == "[APC]"* ]]; then
+            echo "Skipping — this commit is a timestamp proof commit."
+            echo "SKIP=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          mkdir -p .timestamps
+
+          if [[ -f ".timestamps/${TREE_HASH}.tsr" ]]; then
+            echo "Timestamp already exists for tree $TREE_HASH."
+            echo "SKIP=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          openssl ts -query -digest "$TREE_DIGEST" -sha512 -no_nonce -cert -out /tmp/request.tsq
+          curl -s -H "Content-Type: application/timestamp-query" \
+               --data-binary '@/tmp/request.tsq' \
+               https://freetsa.org/tsr \
+               -o .timestamps/${TREE_HASH}.tsr
+
+          wget -q https://freetsa.org/files/tsa.crt -O /tmp/tsa.crt
+          wget -q https://freetsa.org/files/cacert.pem -O /tmp/cacert.pem
+          openssl ts -verify \
+            -in .timestamps/${TREE_HASH}.tsr \
+            -digest "$TREE_DIGEST" \
+            -sha512 \
+            -CAfile /tmp/cacert.pem \
+            -untrusted /tmp/tsa.crt
+
+          echo "RFC 3161 timestamp verified for tree: $TREE_HASH"
+
+      - name: Commit timestamp proof
+        if: env.SKIP != 'true'
+        run: |
+          git config user.name "APC Timestamp Bot"
+          git config user.email "apc-bot@users.noreply.github.com"
+          git add .timestamps/
+          git diff --cached --quiet || git commit -m "[APC] Timestamp proof recorded"
+          git push
