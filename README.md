@@ -2,38 +2,60 @@
 
 Instant walk-to-ride pickup platform — step out and get picked up by the next car whose route matches your destination.
 
-Vision
+## Vision
 - Make short, immediate, route-aligned rides the default urban micro-mobility option.
-- Prioritize safety, minimal waiting (driver should not wait > 30s), and global applicability.
+- Prioritize passenger safety, minimal driver waiting (driver should not wait > 30s), and algorithmic route overlap.
 
-Core principles
-- Route alignment: passengers are matched only when their destination lies along the driver’s route.
-- Immediate pickup: the system favors the next available driver and optimizes pickup points.
-- Safety-first pickup points: suggest safe boarding zones (crosswalks, side streets, designated hubs).
-- Transparent, low pricing: configurable fares (example baseline discussed in design: 150–200 RSD per 10 km) and small platform cut (recommended 10–15%).
-- Authorship proof: this repository includes the IPClaim toolkit to timestamp and assert authorship.
+## Core Principles
+- **Route alignment**: passengers are matched only when their destination lies along (or within allowed deviation of) the driver’s declared route.
+- **Immediate pickup**: favors the next available driver and optimizes pickup boarding zones.
+- **Safety-first pickup points**: suggests safe boarding zones (crosswalks, side streets, designated hubs) avoiding active traffic lanes.
+- **Transparent, predictable pricing**: configurable baseline fare per distance and platform cut.
+- **Authorship proof**: published under the **IPClaim APC License** with automated, independently verifiable RFC 3161 cryptographic timestamping.
 
-Repository contents
-- `DoD.md` — Definition of Done with acceptance criteria.
-- `BACKLOG.md` — Prioritized tasks to reach the DoD.
+## Repository Contents
+- `LICENSE.md` — Author declaration (**Slavko Stojnić**) and All Rights Reserved IP claim under APC v1.1.
+- `VERIFY.md` — Step-by-step instructions to verify the RFC 3161 cryptographic timestamp using OpenSSL.
+- `backend/` — Core algorithmic Python MVP modules:
+  - `matching.py`: Deterministic route-overlap calculations (haversine + segment projections).
+  - `pickup.py`: Safe pickup point suggester with geofence no-pick filtering.
+  - `deviation.py`: Real-time driver deviation detection against declared route.
+  - `waiting.py`: 30-second driver timeout enforcement and reassignment logic.
+  - `pricing.py`: Distance-based fare calculation with configurable platform cut.
+  - `payments.py`: Payment provider sandbox harness.
+  - `telemetry.py`: Request-scoped logging and audit trails.
+- `tests/` — Full test suite verifying core functional algorithms and integrations.
+- `docs/` — Public specifications, privacy documentation, and web showcase.
+- `DoD.md` — Definition of Done with verifiable acceptance criteria.
+- `BACKLOG.md` — Prioritized roadmap of next steps.
+- `HopOn.md` — Invention ideation and design notes.
 
+## IPClaim & Verification
+This repository is published as a **public, timestamped, cryptographically verifiable authorship and IP claim record**.
 
-Quick start
+- **Author**: Slavko Stojnić
+- **License**: [IPClaim APC License v1.1](LICENSE.md)
+- **Verification Guide**: [VERIFY.md](VERIFY.md)
+- **Automated Timestamping**: On push to `main`, GitHub Actions queries an RFC 3161 Time Stamping Authority (FreeTSA.org) and commits the signed `.tsr` token into `.timestamps/`. Anyone can verify the repository state independently using standard OpenSSL tools.
+
+## Quick Start & Testing
+
 1. Clone the repo:
-
 ```bash
-git clone <your-repo-url> HopOn
+git clone https://github.com/aRcHmaGe333/HopOn.git
 cd HopOn
 ```
 
-2. Inspect design and plans: open `HopOn.md`, `DoD.md`, `BACKLOG.md`.
-
-Notes
-- This repo is a product-design-first scaffold. The BACKLOG contains implementation epics for backend, mobile UI, safety, pricing, and operations.
-
-Contributing
-- Read `DoD.md` to understand acceptance criteria before implementing features.
-- Use the `BACKLOG.md` to pick an epic and create a focused branch per task.
+2. Run the automated test suite:
+```bash
+python -m pytest -q
+```
+or on Windows PowerShell:
+```powershell
+.\run_tests.ps1
+```
 
 ---
-Created from `HopOn.md` design notes — see `HopOn.md` for the full conversation and design context.
+**Authorship & Patent Claim established by public record.**  
+Verified by cryptography. Maintained by the internet. Gatekept by no one.
+

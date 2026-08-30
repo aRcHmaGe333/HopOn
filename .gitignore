@@ -12,6 +12,7 @@ __pycache__/
 .cache/
 dist/
 build/
-.timestamps/
 coverage/
 .pytest_cache/
+solopreneur_modifiers.md
+
