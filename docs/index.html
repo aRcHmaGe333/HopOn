@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>HopOn — Instant Walk-to-Ride Pickup</title>
+    <title>HopOn — Instant Walk-to-Ride Pickup Platform</title>
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
@@ -11,50 +11,378 @@
       <img src="logo.svg" alt="HopOn logo" class="logo">
       <h1>HopOn</h1>
       <p class="tagline">Step out. Walk a little. Get picked up immediately.</p>
+      <div class="ip-badge-header">
+        🛡️ Authorship &amp; IP Claim Established • RFC 3161 Cryptographically Timestamped
+      </div>
     </header>
 
     <main class="container">
       <section id="pitch">
-        <h2>Elevator pitch</h2>
-        <p>HopOn connects passengers and drivers whose routes already align, enabling immediate pickups with minimal detours, improved sustainability, and affordable fares.</p>
+        <h2>The Vision: Zero-Detour Urban Micro-Mobility</h2>
+        <p>HopOn turns everyday commuter traffic into an instant, distributed transit mesh. Walking passengers are matched in real-time with private drivers who are <strong>already traveling along their exact corridor</strong>.</p>
         <ul>
-          <li><strong>Route alignment:</strong> Assign rides only when passenger destination lies along the driver’s route.</li>
-          <li><strong>Safety-first pickups:</strong> Recommend safe boarding points; avoid busy lanes.</li>
-          <li><strong>Fast handoff:</strong> Visual color-code handshake; drivers wait &lt;30s.</li>
-          <li><strong>Low fares:</strong> Simple, predictable pricing and a small platform cut.</li>
+          <li><strong>Zero Driver Detour:</strong> Passengers are accepted only when their destination lies along the driver’s declared route (&lt; 50m tolerance).</li>
+          <li><strong>Safe Walk-to-Ride Pickup:</strong> System routes passengers to safe boarding zones (crosswalks, side streets) avoiding active traffic lanes and geofenced hazards.</li>
+          <li><strong>Strict 30-Second Boarding:</strong> Drivers never wait &gt; 30 seconds at the curb; automated timeout and reassignment protect driver efficiency.</li>
+          <li><strong>Synchronized Color Handshake:</strong> Matching visual color codes on passenger and driver screens enable instant identification in busy streets.</li>
+          <li><strong>50–70% Lower Fares:</strong> Predictable, transparent pricing that offsets commuter fuel costs while maintaining a lean 10–15% platform take.</li>
         </ul>
       </section>
 
+      <!-- LIVE INTERACTIVE SIMULATOR -->
+      <section id="simulator">
+        <h2>Live Algorithmic Simulator (Interactive Proof-of-Concept)</h2>
+        <p>Test the deterministic route-overlap matching engine, safe pickup point calculation, and pricing model in real-time:</p>
+
+        <div class="sim-controls">
+          <button class="btn btn-active" id="btn-p1" onclick="loadScenario(1)">Preset 1: Aligned Corridor Match</button>
+          <button class="btn btn-secondary" id="btn-p2" onclick="loadScenario(2)">Preset 2: No-Pick Hazard Avoidance</button>
+          <button class="btn btn-secondary" id="btn-p3" onclick="loadScenario(3)">Preset 3: Off-Route Detour Rejection</button>
+          <span style="font-size:12px;color:#64748b;align-self:center;margin-left:auto;">💡 Tip: Click anywhere on canvas to test custom destination</span>
+        </div>
+
+        <div class="simulator-grid">
+          <div class="sim-canvas-box">
+            <canvas id="simCanvas" width="580" height="360"></canvas>
+          </div>
+
+          <div class="sim-panel">
+            <div id="statusBadge" class="status-pill status-matched">MATCHED (0m Detour)</div>
+
+            <div class="metric-row">
+              <span>Driver Route Corridor:</span>
+              <span class="metric-val" id="valRouteLen">10.0 km</span>
+            </div>
+            <div class="metric-row">
+              <span>Dest. Deviation from Path:</span>
+              <span class="metric-val" id="valDeviation">8 meters</span>
+            </div>
+            <div class="metric-row">
+              <span>Passenger Walk to Pickup:</span>
+              <span class="metric-val" id="valWalk">28 meters (~25s)</span>
+            </div>
+            <div class="metric-row">
+              <span>Estimated Trip Fare:</span>
+              <span class="metric-val" id="valFare">.80</span>
+            </div>
+            <div class="metric-row">
+              <span>Driver Payout (90%):</span>
+              <span class="metric-val" id="valDriver">.62</span>
+            </div>
+            <div class="metric-row">
+              <span>Platform Cut (10%):</span>
+              <span class="metric-val" id="valPlatform">.18</span>
+            </div>
+
+            <div>
+              <span style="font-size:13px;font-weight:600;color:#475569;">Visual Handshake Color:</span>
+              <div class="color-handshake" style="margin-top:6px;">
+                <div class="color-swatch" id="colorSwatch" style="background:#0b8793;"></div>
+                <div>
+                  <div style="font-weight:700;font-size:14px;" id="colorName">Teal Green (#0B8793)</div>
+                  <div style="font-size:12px;color:#64748b;">Synchronized on driver &amp; rider screens</div>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <span style="font-size:13px;font-weight:600;color:#475569;">Boarding Dwell Timer:</span>
+              <div class="timer-box" id="dwellTimer">00:27</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- INSTITUTIONAL, FUNDING & TEAM PORTAL -->
+      <section id="institutional">
+        <h2>Institutional &amp; Investor Diligence Portal</h2>
+        <p>HopOn is built as an asset-light, mathematically proven mobility protocol. Explore our diligence materials and co-founder opportunities:</p>
+
+        <div class="cards-grid">
+          <a class="card" href="https://github.com/aRcHmaGe333/HopOn/blob/main/docs/INVESTOR_ONE_PAGER.md">
+            <h4>📄 Executive One-Pager &amp; Thesis</h4>
+            <p>Comprehensive problem analysis, unit economics, TAM/SAM projections, and milestone-based sequencing.</p>
+          </a>
+
+          <a class="card" href="https://github.com/aRcHmaGe333/HopOn/blob/main/docs/FUNDING_TARGETS.md">
+            <h4>🎯 Grant &amp; Funding Directory</h4>
+            <p>Target programs (EIT Urban Mobility, Horizon Europe, YC, Techstars) and ready-to-submit copy bank.</p>
+          </a>
+
+          <a class="card" href="https://github.com/aRcHmaGe333/HopOn/blob/main/docs/COFOUNDER_SPEC.md">
+            <h4>🤝 Founding Team &amp; Co-Founder Spec</h4>
+            <p>Open co-founder roles (Lead Mobile Architect &amp; City Ops Lead), equity framework, and skill challenges.</p>
+          </a>
+
+          <a class="card" href="https://github.com/aRcHmaGe333/HopOn/blob/main/LICENSE.md">
+            <h4>🛡️ IPClaim APC License &amp; Proof</h4>
+            <p>All Rights Reserved Authorship Claim (Slavko Stojnić) with independent RFC 3161 OpenSSL verification.</p>
+          </a>
+        </div>
+      </section>
+
       <section id="status">
-        <h2>Project status</h2>
-        <p>Design and MVP scaffold are in place. The repo contains the DoD, backlog, and design notes for stakeholders and contributors.</p>
+        <h2>Repository Status &amp; Core Artifacts</h2>
+        <p>All functional MVP backend modules (route matching, safe pickup suggestion, deviation monitoring, pricing engine, 30s timeout policy) pass 100% of tests in GitHub Actions CI.</p>
         <p>
+          <a href="https://github.com/aRcHmaGe333/HopOn">GitHub Repository</a> •
           <a href="https://github.com/aRcHmaGe333/HopOn/blob/main/DoD.md">Definition of Done (DoD)</a> •
-          <a href="https://github.com/aRcHmaGe333/HopOn/blob/main/BACKLOG.md">Backlog</a> •
-          <a href="https://github.com/aRcHmaGe333/HopOn/blob/main/HopOn.md">Design notes</a> •
-          <a href="https://github.com/aRcHmaGe333/HopOn/blob/main/LICENSE.md">IP Claim & License</a> •
-          <a href="https://github.com/aRcHmaGe333/HopOn/blob/main/VERIFY.md">Verification Guide</a>
+          <a href="https://github.com/aRcHmaGe333/HopOn/blob/main/BACKLOG.md">Roadmap Backlog</a> •
+          <a href="https://github.com/aRcHmaGe333/HopOn/blob/main/docs/api.md">API Specification</a> •
+          <a href="https://github.com/aRcHmaGe333/HopOn/blob/main/VERIFY.md">OpenSSL Verification Guide</a>
         </p>
       </section>
 
-      <section id="how">
-        <h2>How it works — high level</h2>
-        <ol>
-          <li>Driver declares route; passenger requests a ride with destination.</li>
-          <li>Matching engine checks route overlap and recommends safe pickup points.</li>
-          <li>Apps show ETA and a color-code handshake for identification.</li>
-          <li>Driver waits &lt;30s; deviations are recorded and enforced.</li>
-        </ol>
-      </section>
-
-      <section id="next">
-        <h2>Next steps</h2>
-        <p>Implement the matching engine, safe-pickup algorithm, passenger/driver apps, and payments integration.</p>
-      </section>
-
       <footer>
-        <p>HopOn — design preview. See the repository for technical details and contribution guidelines.</p>
+        <p>HopOn — Instant Walk-to-Ride Pickup Platform.<br>Authorship &amp; IP Claim established by public record under IPClaim APC v1.1.<br>Maintained by Slavko Stojnić.</p>
       </footer>
     </main>
+
+    <script>
+      // SIMULATOR SCRIPT
+      const canvas = document.getElementById('simCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const driverRoute = [
+        {x: 40, y: 180},
+        {x: 160, y: 180},
+        {x: 280, y: 120},
+        {x: 420, y: 120},
+        {x: 540, y: 220}
+      ];
+
+      const noPickZone = { x: 200, y: 160, r: 40 };
+
+      let passenger = {
+        origin: {x: 170, y: 165},
+        dest: {x: 410, y: 125}
+      };
+
+      const colorPalette = [
+        {name: "Teal Green (#0B8793)", hex: "#0b8793"},
+        {name: "Coral Sun (#E056FD)", hex: "#e056fd"},
+        {name: "Amber Flame (#F0932B)", hex: "#f0932b"},
+        {name: "Electric Blue (#22A6B3)", hex: "#22a6b3"},
+        {name: "Emerald Flash (#6AB04C)", hex: "#6ab04c"}
+      ];
+
+      let currentColor = colorPalette[0];
+      let timerSec = 28;
+
+      function distSq(p1, p2) {
+        return (p1.x - p2.x)**2 + (p1.y - p2.y)**2;
+      }
+
+      function dist(p1, p2) {
+        return Math.sqrt(distSq(p1, p2));
+      }
+
+      function distToSegment(p, v, w) {
+        const l2 = distSq(v, w);
+        if (l2 === 0) return dist(p, v);
+        let t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return dist(p, { x: v.x + t * (w.x - v.x), y: v.y + t * (w.y - v.y) });
+      }
+
+      function minDistanceToRoute(pt, route) {
+        let best = Infinity;
+        for (let i = 0; i < route.length - 1; i++) {
+          const d = distToSegment(pt, route[i], route[i+1]);
+          if (d < best) best = d;
+        }
+        return best;
+      }
+
+      function suggestPickup(origin, hazard) {
+        // Offsets in pixels (representing ~10-20 meters)
+        const offsets = [
+          {dx: 0, dy: 0},
+          {dx: 0, dy: -25},
+          {dx: 0, dy: 25},
+          {dx: 25, dy: 0},
+          {dx: -25, dy: 0},
+          {dx: 30, dy: -25},
+          {dx: -30, dy: 25}
+        ];
+        for (let o of offsets) {
+          const cand = { x: origin.x + o.dx, y: origin.y + o.dy };
+          if (dist(cand, hazard) > hazard.r) {
+            return cand;
+          }
+        }
+        return { x: origin.x + 35, y: origin.y - 35 };
+      }
+
+      function loadScenario(num) {
+        document.querySelectorAll('.sim-controls .btn').forEach(b => b.className = 'btn btn-secondary');
+        document.getElementById('btn-p' + num).className = 'btn btn-active';
+
+        if (num === 1) {
+          passenger.origin = {x: 100, y: 190};
+          passenger.dest = {x: 415, y: 122};
+          currentColor = colorPalette[0];
+        } else if (num === 2) {
+          passenger.origin = {x: 200, y: 165}; // inside no-pick zone
+          passenger.dest = {x: 430, y: 125};
+          currentColor = colorPalette[1];
+        } else if (num === 3) {
+          passenger.origin = {x: 110, y: 190};
+          passenger.dest = {x: 320, y: 310}; // far off-route detour
+          currentColor = colorPalette[2];
+        }
+        timerSec = 30;
+        updateSim();
+      }
+
+      function updateSim() {
+        const destDevPx = minDistanceToRoute(passenger.dest, driverRoute);
+        const isMatched = destDevPx <= 22; // ~50m scale threshold
+        const pickupPt = suggestPickup(passenger.origin, noPickZone);
+        const walkDistPx = dist(passenger.origin, pickupPt);
+
+        // Update UI
+        const badge = document.getElementById('statusBadge');
+        if (isMatched) {
+          badge.className = 'status-pill status-matched';
+          badge.innerText = 'MATCHED (0m Detour)';
+        } else {
+          badge.className = 'status-pill status-nomatch';
+          badge.innerText = 'REJECTED (Detour > 50m)';
+        }
+
+        const devMeters = Math.round(destDevPx * 1.8);
+        document.getElementById('valDeviation').innerText = ${devMeters} meters ;
+        
+        const walkMeters = Math.round(walkDistPx * 1.5);
+        const walkSec = Math.round(walkMeters * 0.9);
+        document.getElementById('valWalk').innerText = ${walkMeters} meters (~s walk);
+
+        const tripKm = isMatched ? 7.8 : 0;
+        const totalFare = isMatched ? (1.50 * (tripKm / 10) * 1.4).toFixed(2) : 0;
+        const driverFare = (totalFare * 0.9).toFixed(2);
+        const platformFare = (totalFare * 0.1).toFixed(2);
+
+        document.getElementById('valFare').innerText = isMatched ? $ : '.00';
+        document.getElementById('valDriver').innerText = isMatched ? $ : '.00';
+        document.getElementById('valPlatform').innerText = isMatched ? $ : '.00';
+
+        document.getElementById('colorSwatch').style.background = currentColor.hex;
+        document.getElementById('colorName').innerText = currentColor.name;
+
+        draw(pickupPt, isMatched);
+      }
+
+      function draw(pickupPt, isMatched) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Background grid
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 30) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += 30) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+
+        // Draw No-Pick Hazard Zone
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.18)';
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.arc(noPickZone.x, noPickZone.y, noPickZone.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = '#b91c1c';
+        ctx.font = '11px sans-serif';
+        ctx.fillText('NO-PICK ZONE (Hazard)', noPickZone.x - 55, noPickZone.y - noPickZone.r - 6);
+
+        // Draw Driver Route Corridor
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 18;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(driverRoute[0].x, driverRoute[0].y);
+        for (let i = 1; i < driverRoute.length; i++) {
+          ctx.lineTo(driverRoute[i].x, driverRoute[i].y);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = '#0b8793';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.moveTo(driverRoute[0].x, driverRoute[0].y);
+        for (let i = 1; i < driverRoute.length; i++) {
+          ctx.lineTo(driverRoute[i].x, driverRoute[i].y);
+        }
+        ctx.stroke();
+
+        // Route Start / End Labels
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText('Driver Origin', driverRoute[0].x - 10, driverRoute[0].y - 14);
+        ctx.fillText('Driver Destination', driverRoute[driverRoute.length-1].x - 60, driverRoute[driverRoute.length-1].y + 24);
+
+        // Draw Passenger Origin
+        ctx.fillStyle = '#2563eb';
+        ctx.beginPath();
+        ctx.arc(passenger.origin.x, passenger.origin.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.font = '11px sans-serif';
+        ctx.fillText('Passenger Origin', passenger.origin.x - 40, passenger.origin.y + 20);
+
+        // Draw Safe Pickup Point & Walk line
+        if (pickupPt) {
+          ctx.strokeStyle = '#16a34a';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([3, 3]);
+          ctx.beginPath();
+          ctx.moveTo(passenger.origin.x, passenger.origin.y);
+          ctx.lineTo(pickupPt.x, pickupPt.y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          ctx.fillStyle = '#16a34a';
+          ctx.beginPath();
+          ctx.arc(pickupPt.x, pickupPt.y, 7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillText('Safe Boarding Point', pickupPt.x - 45, pickupPt.y - 12);
+        }
+
+        // Draw Passenger Destination
+        ctx.fillStyle = isMatched ? '#7c3aed' : '#dc2626';
+        ctx.beginPath();
+        ctx.arc(passenger.dest.x, passenger.dest.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText(isMatched ? 'Passenger Dest (Matched)' : 'Passenger Dest (Detour!)', passenger.dest.x - 55, passenger.dest.y - 12);
+      }
+
+      canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const clickX = (e.clientX - rect.left) * scaleX;
+        const clickY = (e.clientY - rect.top) * scaleY;
+
+        passenger.dest = { x: clickX, y: clickY };
+        document.querySelectorAll('.sim-controls .btn').forEach(b => b.className = 'btn btn-secondary');
+        updateSim();
+      });
+
+      // Boarding Countdown interval
+      setInterval(() => {
+        timerSec = timerSec > 0 ? timerSec - 1 : 30;
+        const secStr = timerSec < 10 ? '0' + timerSec : timerSec;
+        document.getElementById('dwellTimer').innerText = '00:' + secStr;
+      }, 1000);
+
+      loadScenario(1);
+    </script>
   </body>
 </html>

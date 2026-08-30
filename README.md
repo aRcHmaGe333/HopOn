@@ -25,10 +25,18 @@ Instant walk-to-ride pickup platform — step out and get picked up by the next 
   - `payments.py`: Payment provider sandbox harness.
   - `telemetry.py`: Request-scoped logging and audit trails.
 - `tests/` — Full test suite verifying core functional algorithms and integrations.
-- `docs/` — Public specifications, privacy documentation, and web showcase.
+- `docs/` — Public specifications, documentation, and showcase:
+  - [Live Interactive Simulator](https://archmage333.github.io/HopOn/) (test route matching in browser)
+  - [Executive One-Pager & Investment Thesis](docs/INVESTOR_ONE_PAGER.md) (unit economics, TAM, sequencing)
+  - [Institutional Grants & Funding Targets](docs/FUNDING_TARGETS.md) (EIT Urban Mobility, Horizon Europe, copy bank)
+  - [Founding Team & Co-Founder Spec](docs/COFOUNDER_SPEC.md) (open roles, equity model, contributor challenge)
 - `DoD.md` — Definition of Done with verifiable acceptance criteria.
 - `BACKLOG.md` — Prioritized roadmap of next steps.
 - `HopOn.md` — Invention ideation and design notes.
+
+## Live Showcase & Simulator
+Experience the deterministic route-overlap matching, safe pickup hazard avoidance, and 30-second dwell timer live in your browser:  
+👉 **[archmage333.github.io/HopOn](https://archmage333.github.io/HopOn/)**
 
 ## IPClaim & Verification
 This repository is published as a **public, timestamped, cryptographically verifiable authorship and IP claim record**.
