@@ -6,7 +6,7 @@ real streets: this prototype does not verify drivable roads or legal stopping.
 from __future__ import annotations
 
 from math import cos, radians
-from secrets import token_urlsafe
+from secrets import token_urlsafe, randbelow, choice
 from threading import RLock
 from time import time
 from typing import Any
@@ -189,6 +189,8 @@ class HopOn:
         if not available:
             return
         offer = min(available, key=lambda x: (x['score'], x['driver_id']))
+        offer['handshake_code'] = str(1000 + randbelow(9000))
+        offer['handshake_color'] = choice(['#0a6973', '#693ab9', '#b95c07', '#236d45', '#ad286b'])
         ride.update(status='assigned', match=offer, arrived_at=None,
                     updated_at=self.clock())
 
