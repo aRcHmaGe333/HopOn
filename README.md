@@ -18,6 +18,24 @@ The passenger walks to the pickup point. The driver should not be sitting there 
 
 The current design also includes a simple visual handshake so the right person finds the right car without doing license-plate archaeology in traffic.
 
+## Run the software
+
+**Windows:** Clone or download the repository, then double-click `start_hopon.cmd`. Python 3.10+ is required. No extra Python packages are required to run the pilot.
+
+**Any platform:**
+
+```bash
+python hopon_app.py
+```
+
+Open **http://127.0.0.1:8787** in two browser tabs: Driver → Example driver → Go online; Passenger → Example trip → Find a passing ride. The screens communicate through the same local service. Use **Simulate arrival** on the driver side, then board and complete the trip.
+
+The new local pilot supports multiple cars and passengers, ordered route matching, seat reservations, live GPS updates when opted in, route-based example fares, driver decline, and automatic reassignment after a 30-second pickup wait. Source: [local pilot server](hopon_app.py) · [mobile-friendly passenger/driver interface](web/index.html) · [tests](tests/).
+
+The GitHub Pages [browser simulator](https://archmage333.github.io/HopOn/) is a separate **static demonstration**, not the server-backed passenger/driver application.
+
+**Current boundary:** This is runnable prototype software, not a transport service. The route points are provided by the driver; pickup suggestions have not been validated against actual road rules or stopping restrictions. There is no production hosting, persistent database, verified identity, insurance integration, or real payment processing. Pilot sessions live in memory and disappear when the server stops. Use test data. Never expose the local HTTP server directly to the public internet.
+
 ## What actually exists
 
 This is not just a sketch anymore. The repo has working Python modules for:
@@ -36,7 +54,7 @@ There is also a live browser simulator:
 
 **https://archmage333.github.io/HopOn/**
 
-Current stage: **algorithmic MVP + live simulator**.
+Current stage: **algorithmic MVP + working two-sided local pilot + separate static simulator**.
 
 ## Why I care about this
 
