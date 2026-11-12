@@ -64,23 +64,59 @@ def projection(route: list[tuple[float, float]], point: tuple[float, float]):
     return best
 
 
+
+MAX_ETA_SECONDS = 300
+WALK_SPEED_M_S = 1.35
+DEFAULT_DRIVER_SPEED_M_S = 8.33  # 30 km/h, demonstration estimate
+
+
+def point_at_progress(route: list[tuple[float, float]], metres: float):
+    """Interpolate a point at a given cumulative distance on a route."""
+    left = max(0, metres)
+    for a, b in zip(route, route[1:]):
+        length = distance_m(a, b)
+        if left <= length:
+            t = 0 if length == 0 else left / length
+            return (a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)
+        left -= length
+    return route[-1]
+
+
 def match_driver(driver: dict, origin, destination, excluded=(), now=None):
     if driver['id'] in excluded or not driver['online'] or driver['seats'] <= 0:
         return None
     if (time() if now is None else now) - driver['last_seen'] > DRIVER_STALE_SECONDS:
         return None
     route = driver['route']
-    walk, pickup_progress, pickup = projection(route, origin)
+    walk_offset, near_progress, _ = projection(route, origin)
     drop_offset, drop_progress, drop = projection(route, destination)
     driver_offset, driver_progress, _ = projection(route, driver['position'])
-    if (driver_offset > 300 or walk > MAX_WALK_M or drop_offset > MAX_DROP_M or
-            pickup_progress < driver_progress - 15 or drop_progress < pickup_progress + 150):
+    if (walk_offset > MAX_WALK_M or drop_offset > MAX_DROP_M or
+            driver_offset > 300 or drop_progress - driver_progress < 150):
         return None
-    remaining_km = (drop_progress - pickup_progress) / 1000
-    fare = calculate_fare(remaining_km)
+
+    # Find a meeting point along the existing route, synchronizing the
+    # walking passenger and the passing car before the 30-second wait expires.
+    min_progress = max(driver_progress, near_progress)
+    max_progress = min(drop_progress - 150, driver_progress + MAX_ETA_SECONDS * DEFAULT_DRIVER_SPEED_M_S)
+    available = []
+    p = min_progress
+    while p <= max_progress + 0.1:
+        pickup = point_at_progress(route, p)
+        walk = distance_m(origin, pickup)
+        eta = (p - driver_progress) / DEFAULT_DRIVER_SPEED_M_S
+        walk_eta = walk / WALK_SPEED_M_S
+        if walk <= MAX_WALK_M and eta >= walk_eta - WAIT_SECONDS:
+            available.append((max(eta, walk_eta) + walk * 0.1, p, pickup, walk, eta))
+        p += 25
+    if not available:
+        return None
+    score, pickup_progress, pickup, walk, eta = min(available, key=lambda x: x[0])
+    ride_km = (drop_progress - pickup_progress) / 1000
     return dict(driver_id=driver['id'], pickup=list(pickup), dropoff=list(drop),
-                walk_m=round(walk), ride_km=round(remaining_km, 2),
-                fare=fare, score=round(walk + max(0, pickup_progress - driver_progress) * .15, 2))
+                walk_m=round(walk), ride_km=round(ride_km, 2),
+                estimated_arrival_s=round(eta), fare=calculate_fare(ride_km),
+                score=round(score, 2))
 
 
 class HopOn:
