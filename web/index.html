@@ -18,7 +18,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.full{width:100%;margin-top:12px}
 #message,.status{padding:12px;border-radius:8px;margin-top:14px;background:#edf6f4;line-height:1.5}
 #message{background:#f9e5e2;color:#8a2525;display:none}.hide{display:none!important}
 .metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.metrics>div{padding:10px;background:#f2f7f7;border-radius:8px}
-.metrics span{display:block;font-size:12px;color:#61767b}.opt{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;margin:10px 0}.opt input{width:auto}.metrics strong{display:block;margin-top:3px}
+.metrics span{display:block;font-size:12px;color:#61767b}.handshake{display:flex;align-items:center;gap:12px}.swatch{width:50px;height:50px;border-radius:8px;border:2px solid white;box-shadow:0 0 0 1px #bccbd0;flex:none}.opt{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;margin:10px 0}.opt input{width:auto}.metrics strong{display:block;margin-top:3px}
 footer{max-width:1200px;margin:auto;color:#667b7e;padding:0 16px 22px;font-size:12px}
 @media(max-width:800px){main{display:flex;flex-direction:column}#map{height:360px}section.map-panel{order:-1}}
 </style>
@@ -44,6 +44,7 @@ footer{max-width:1200px;margin:auto;color:#667b7e;padding:0 16px 22px;font-size:
 <div><span>Example fare</span><strong id="rideFare">—</strong></div>
 <div><span>Passing car</span><strong id="vehicle">—</strong></div>
 </div>
+<div id="riderHandshake" class="status handshake hide"><span id="riderColor" class="swatch"></span><span>Match this color and number with the driver: <strong id="riderCode"></strong></span></div>
 <div class="row"><button id="board">I am in the car</button><button id="cancel" class="danger">Cancel</button></div>
 </div></div>
 <div id="driverPanel" class="hide">
@@ -55,7 +56,7 @@ footer{max-width:1200px;margin:auto;color:#667b7e;padding:0 16px 22px;font-size:
 <label class="opt"><input type="checkbox" id="driverLive"> Share my live GPS position while online</label><button id="register" class="primary full">Go online</button>
 <div id="driverActive" class="hide">
 <div id="driverStatus" class="status" aria-live="polite"></div>
-<div id="assignment" class="status"></div>
+<div id="assignment" class="status"></div><div id="driverHandshake" class="status handshake hide"><span id="driverColor" class="swatch"></span><span>Show this color and number to your passenger: <strong id="driverCode"></strong></span></div>
 <div class="row"><button id="arrive">Simulate arrival</button><button id="decline">Pass on this pickup</button><button id="offline" class="danger">Go offline</button></div>
 <button id="complete" class="full">Complete boarded ride</button>
 </div></div>
@@ -164,6 +165,8 @@ function displayRide(v){
  el('driverEta').textContent=v.match?(v.match.estimated_arrival_s<60?Math.max(0,v.match.estimated_arrival_s)+' sec':Math.ceil(v.match.estimated_arrival_s/60)+' min'):'—';
  el('rideFare').textContent=v.match?v.match.fare.total.toFixed(2)+' SEK':'—';
  el('vehicle').textContent=v.driver?v.driver.label:'—';
+ show('riderHandshake',!!v.match);
+ if(v.match){el('riderColor').style.background=v.match.handshake_color;el('riderCode').textContent=v.match.handshake_code;}
  el('board').disabled=v.status!=='assigned'||v.waiting_seconds===null;
  el('cancel').disabled=!['searching','assigned'].includes(v.status);
  if(['completed','cancelled'].includes(v.status)){localStorage.removeItem('hopon_ride');ride=null;}
@@ -182,6 +185,8 @@ function displayDriver(v){
  el('driverStatus').textContent='Driver '+(v.driver.online?'online':'offline')+'; '+v.rides.length+' active pickup(s).';
  const a=v.rides[0];
  el('assignment').textContent=a?('Passenger '+a.status+'; pickup '+fmt(a.match.pickup)+'; example payout '+a.match.fare.driver_amount.toFixed(2)+' SEK.'):'No passengers assigned.';
+ show('driverHandshake',!!a);
+ if(a){el('driverColor').style.background=a.match.handshake_color;el('driverCode').textContent=a.match.handshake_code;}
  el('arrive').disabled=!a||a.status!=='assigned';
  el('decline').disabled=!a||a.status!=='assigned';
  el('complete').disabled=!a||a.status!=='boarded';
