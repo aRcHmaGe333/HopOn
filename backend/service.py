@@ -72,8 +72,8 @@ def match_driver(driver: dict, origin, destination, excluded=(), now=None):
     route = driver['route']
     walk, pickup_progress, pickup = projection(route, origin)
     drop_offset, drop_progress, drop = projection(route, destination)
-    _, driver_progress, _ = projection(route, driver['position'])
-    if (walk > MAX_WALK_M or drop_offset > MAX_DROP_M or
+    driver_offset, driver_progress, _ = projection(route, driver['position'])
+    if (driver_offset > 300 or walk > MAX_WALK_M or drop_offset > MAX_DROP_M or
             pickup_progress < driver_progress - 15 or drop_progress < pickup_progress + 150):
         return None
     remaining_km = (drop_progress - pickup_progress) / 1000
@@ -213,8 +213,10 @@ class HopOn:
             ride = self.rides.get(ride_id)
             if not ride or ride['token'] != token:
                 raise PermissionError('Ride session not found')
-            if ride['status'] == 'searching':
-                ride['origin'] = coordinate(payload.get('origin'))
+            if ride['status'] in ('searching', 'assigned') and 'origin' in payload:
+                ride['origin'] = coordinate(payload['origin'])
+                if ride['status'] == 'assigned':
+                    ride['match']['walk_m'] = round(distance_m(ride['origin'], tuple(ride['match']['pickup'])))
             self._refresh()
             return self._public_ride(ride)
 
@@ -234,6 +236,10 @@ class HopOn:
                 if not driver or distance_m(driver['position'], tuple(ride['match']['pickup'])) > PICKUP_ARRIVAL_M:
                     raise ValueError('Driver has not reached the meeting point')
                 ride['status'] = 'boarded'
+            elif action == 'decline' and ride['status'] == 'assigned' and is_driver:
+                ride['excluded'].append(driver['id'])
+                ride.update(status='searching', match=None, arrived_at=None)
+                self._refresh()
             elif action == 'complete' and ride['status'] == 'boarded' and is_driver:
                 ride['status'] = 'completed'
             else:
