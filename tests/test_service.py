@@ -129,3 +129,13 @@ def test_driver_deviation_is_reassigned():
     ride = e.request_ride({'origin': [59.32, 18.065], 'destination': R[3]})
     e.update_driver(driver['driver_id'], driver['token'], {'position': [59.325, 18.06]})
     assert e.get_ride(ride['ride_id'], ride['token'])['status'] == 'searching'
+
+
+def test_color_handshake_is_same_for_driver_and_passenger():
+    e = HopOn()
+    driver = e.register_driver({'route': R})
+    ride = e.request_ride({'origin': [59.32, 18.065], 'destination': R[3]})
+    matching_driver = e.driver_rides(driver['driver_id'], driver['token'])['rides'][0]
+    for field in ('handshake_color', 'handshake_code'):
+        assert ride['match'][field] == matching_driver['match'][field]
+    assert len(ride['match']['handshake_code']) == 4
