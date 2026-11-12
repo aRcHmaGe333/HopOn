@@ -92,3 +92,24 @@ def test_walking_live_update():
     initial = a['match']['walk_m']
     r = e.update_passenger(a['ride_id'], a['token'], {'origin': [59.32, 18.065]})
     assert r['match']['walk_m'] < initial
+
+
+def test_next_approaching_car_and_live_eta():
+    now = [1000.0]
+    e = HopOn(clock=lambda: now[0])
+    e.register_driver({'route': R, 'position': R[0]})
+    next_car = e.register_driver({'route': R, 'position': R[1]})
+    ride = e.request_ride({'origin': R[2], 'destination': R[3]})
+    assert ride['match']['driver_id'] == next_car['driver_id']
+    old_eta = ride['match']['estimated_arrival_s']
+    e.update_driver(next_car['driver_id'], next_car['token'], {'position': [59.32, 18.072]})
+    new_eta = e.get_ride(ride['ride_id'], ride['token'])['match']['estimated_arrival_s']
+    assert new_eta < old_eta
+
+
+def test_very_close_car_cannot_wait_for_long_walk():
+    now = [1000.0]
+    e = HopOn(clock=lambda: now[0])
+    e.register_driver({'route': R, 'position': [59.32, 18.07]})
+    ride = e.request_ride({'origin': [59.3219, 18.07], 'destination': R[3]})
+    assert ride['status'] == 'searching'
