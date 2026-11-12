@@ -216,7 +216,12 @@ class HopOn:
     def _public_ride(self, ride):
         match = ride['match']
         driver = self.drivers.get(match['driver_id']) if match else None
-        return {'id': ride['id'], 'status': ride['status'], 'match': match,
+        shown_match = dict(match) if match else None
+        if driver and shown_match:
+            _, car_progress, _ = projection(driver['route'], driver['position'])
+            _, pickup_progress, _ = projection(driver['route'], tuple(match['pickup']))
+            shown_match['estimated_arrival_s'] = max(0, round((pickup_progress - car_progress) / DEFAULT_DRIVER_SPEED_M_S))
+        return {'id': ride['id'], 'status': ride['status'], 'match': shown_match,
                 'driver': ({'label': driver['label'], 'position': list(driver['position'])}
                            if driver else None),
                 'origin': list(ride['origin']), 'destination': list(ride['destination']),
