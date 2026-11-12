@@ -28,3 +28,19 @@ jobs:
       - name: Run tests
         run: |
           python -m pytest -q
+
+      - name: Check browser JavaScript syntax
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          for file in ('web/index.html', 'docs/index.html'):
+              text = Path(file).read_text(encoding='utf-8')
+              m = re.search(r'<script>([\\s\\S]*?)</script>', text)
+              if not m:
+                  raise SystemExit(f'No inline script in {file}')
+              Path('/tmp/hopon-check.js').write_text(m.group(1))
+              import subprocess
+              subprocess.run(['node', '--check', '/tmp/hopon-check.js'], check=True)
+              print(file, 'JavaScript syntax OK')
+          PY
