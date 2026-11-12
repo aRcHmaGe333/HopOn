@@ -32,7 +32,7 @@
       <!-- LIVE INTERACTIVE SIMULATOR -->
       <section id="simulator">
         <h2>Live Algorithmic Simulator (Interactive Proof-of-Concept)</h2>
-        <p>Test the deterministic route-overlap matching engine, safe pickup point calculation, and pricing model in real-time:</p>
+        <p>Interactive geometric demonstration of route matching, pickup avoidance, and example fares. This runs independently of the Python pilot service; it does not represent live vehicles.</p>
 
         <div class="sim-controls">
           <button class="btn btn-active" id="btn-p1" onclick="loadScenario(1)">Preset 1: Aligned Corridor Match</button>
@@ -252,20 +252,20 @@
         }
 
         const devMeters = Math.round(destDevPx * 1.8);
-        document.getElementById('valDeviation').innerText = ${devMeters} meters ;
+        document.getElementById('valDeviation').innerText = devMeters + ' meters';
         
         const walkMeters = Math.round(walkDistPx * 1.5);
         const walkSec = Math.round(walkMeters * 0.9);
-        document.getElementById('valWalk').innerText = ${walkMeters} meters (~s walk);
+        document.getElementById('valWalk').innerText = walkMeters + ' meters (~' + walkSec + 's walk)';
 
         const tripKm = isMatched ? 7.8 : 0;
         const totalFare = isMatched ? (1.50 * (tripKm / 10) * 1.4).toFixed(2) : 0;
         const driverFare = (totalFare * 0.9).toFixed(2);
         const platformFare = (totalFare * 0.1).toFixed(2);
 
-        document.getElementById('valFare').innerText = isMatched ? $ : '.00';
-        document.getElementById('valDriver').innerText = isMatched ? $ : '.00';
-        document.getElementById('valPlatform').innerText = isMatched ? $ : '.00';
+        document.getElementById('valFare').innerText = isMatched ? '$' + totalFare : '$0.00';
+        document.getElementById('valDriver').innerText = isMatched ? '$' + driverFare : '$0.00';
+        document.getElementById('valPlatform').innerText = isMatched ? '$' + platformFare : '$0.00';
 
         document.getElementById('colorSwatch').style.background = currentColor.hex;
         document.getElementById('colorName').innerText = currentColor.name;
