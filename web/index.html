@@ -40,6 +40,7 @@ footer{max-width:1200px;margin:auto;color:#667b7e;padding:0 16px 22px;font-size:
 <div class="metrics">
 <div><span>Walk to pickup</span><strong id="walk">—</strong></div>
 <div><span>Ride length</span><strong id="rideLength">—</strong></div>
+<div><span>Car arrives in (estimate)</span><strong id="driverEta">—</strong></div>
 <div><span>Example fare</span><strong id="rideFare">—</strong></div>
 <div><span>Passing car</span><strong id="vehicle">—</strong></div>
 </div>
@@ -160,6 +161,7 @@ function displayRide(v){
  if(v.status==='assigned'&&v.waiting_seconds!==null)el('rideStatus').textContent+=' Driver waiting: '+v.waiting_seconds+' sec.';
  el('walk').textContent=v.match?v.match.walk_m+' m':'—';
  el('rideLength').textContent=v.match?v.match.ride_km+' km':'—';
+ el('driverEta').textContent=v.match?(v.match.estimated_arrival_s<60?Math.max(0,v.match.estimated_arrival_s)+' sec':Math.ceil(v.match.estimated_arrival_s/60)+' min'):'—';
  el('rideFare').textContent=v.match?v.match.fare.total.toFixed(2)+' SEK':'—';
  el('vehicle').textContent=v.driver?v.driver.label:'—';
  el('board').disabled=v.status!=='assigned'||v.waiting_seconds===null;
