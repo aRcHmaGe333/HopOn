@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HopOn — existing trips, shared seats</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzx8+6zK8V1Gkhkf3PpB5m+fPI=" crossorigin="">
+<style>
+*{box-sizing:border-box}body{margin:0;font:15px system-ui,-apple-system,Segoe UI,sans-serif;background:#f3f8f8;color:#18343c}
+header{background:#0b616b;padding:18px 22px;color:#fff;display:flex;align-items:center;justify-content:space-between}
+h1{margin:0;font-size:26px}h2{margin:0 0 14px;font-size:20px}main{max-width:1200px;margin:20px auto;padding:0 16px;display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:18px}
+section{background:white;border:1px solid #dae6e8;border-radius:14px;padding:18px;box-shadow:0 6px 24px #1a364013}
+.tabs,.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.row>*{flex:1}
+label{display:block;margin:14px 0 5px;font-weight:600;font-size:13px}input,textarea{width:100%;font:inherit;padding:10px;border:1px solid #b9cdd0;border-radius:8px}
+textarea{min-height:100px;resize:vertical}button{border:0;border-radius:8px;padding:11px;font:inherit;cursor:pointer;color:#174b50;background:#e3eff0}
+button.primary,.active{background:#0a6672;color:#fff}button.danger{color:#a2302b;background:#fbedeb}
+button:disabled{opacity:.45;cursor:not-allowed}.full{width:100%;margin-top:12px}
+.hint{font-size:13px;color:#596e74;line-height:1.5}#map{height:540px;border-radius:10px}
+#message,.status{padding:12px;border-radius:8px;margin-top:14px;background:#edf6f4;line-height:1.5}
+#message{background:#f9e5e2;color:#8a2525;display:none}.hide{display:none!important}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.metrics>div{padding:10px;background:#f2f7f7;border-radius:8px}
+.metrics span{display:block;font-size:12px;color:#61767b}.metrics strong{display:block;margin-top:3px}
+footer{max-width:1200px;margin:auto;color:#667b7e;padding:0 16px 22px;font-size:12px}
+@media(max-width:800px){main{display:flex;flex-direction:column}#map{height:360px}section.map-panel{order:-1}}
+</style>
+</head>
+<body>
+<header><h1>HopOn</h1><small>Already going your way.</small></header>
+<main>
+<section>
+<div class="tabs"><button id="tabRider" class="active">Passenger</button><button id="tabDriver">Driver</button></div>
+<div id="riderPanel">
+<h2>Find a passing car</h2>
+<p class="hint">Enter your location and destination, or tap the map. Walking to a passing car's route is part of the trip.</p>
+<div class="row"><button id="gpsRider">My location</button><button id="exampleRider">Example trip</button></div>
+<label for="origin">Your location (latitude, longitude)</label><input id="origin" placeholder="59.320000, 18.065000">
+<label for="destination">Destination (latitude, longitude)</label><input id="destination" placeholder="59.320000, 18.086000">
+<button id="request" class="primary full">Find a passing ride</button>
+<div id="ridePanel" class="hide">
+<div id="rideStatus" class="status" aria-live="polite"></div>
+<div class="metrics">
+<div><span>Walk to pickup</span><strong id="walk">—</strong></div>
+<div><span>Ride length</span><strong id="rideLength">—</strong></div>
+<div><span>Example fare</span><strong id="rideFare">—</strong></div>
+<div><span>Passing car</span><strong id="vehicle">—</strong></div>
+</div>
+<div class="row"><button id="board">I am in the car</button><button id="cancel" class="danger">Cancel</button></div>
+</div></div>
+<div id="driverPanel" class="hide">
+<h2>Share a route you're already taking</h2>
+<p class="hint">Tap successive points along your actual driving route, in order. The system only accepts pickup and dropoff points along this route.</p>
+<div class="row"><button id="gpsDriver">Start at my location</button><button id="exampleDriver">Example driver</button><button id="clear">Clear</button></div>
+<label for="route">Route points (one latitude, longitude pair per line)</label><textarea id="route" placeholder="59.320000, 18.050000&#10;59.320000, 18.060000&#10;59.320000, 18.090000"></textarea>
+<div class="row"><div><label for="carLabel">Car description</label><input id="carLabel" maxlength="60" placeholder="Blue hatchback"></div><div><label for="seats">Free seats</label><input id="seats" type="number" value="1" min="1" max="8"></div></div>
+<button id="register" class="primary full">Go online</button>
+<div id="driverActive" class="hide">
+<div id="driverStatus" class="status" aria-live="polite"></div>
+<div id="assignment" class="status"></div>
+<div class="row"><button id="arrive">Simulate arrival</button><button id="offline" class="danger">Go offline</button></div>
+<button id="complete" class="full">Complete boarded ride</button>
+</div></div>
+<div id="message" role="alert"></div>
+</section>
+<section class="map-panel"><div id="map"></div><p id="mapHint" class="hint">Tap the map to select a destination; use GPS on localhost or HTTPS.</p></section>
+</main>
+<footer>Pilot software, not an operational transport service. Meeting points are geometric approximations; stopping safety, driver identity, insurance, and real payments have not been verified.</footer>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+'use strict';
+const el=id=>document.getElementById(id);
+const sampleRoute=[[59.32,18.05],[59.32,18.06],[59.32,18.075],[59.32,18.09]];
+let mode='rider',map=null,drawn=[],ride=JSON.parse(localStorage.getItem('hopon_ride')||'null'),driver=JSON.parse(localStorage.getItem('hopon_driver')||'null');
+function show(id,v){el(id).classList.toggle('hide',!v);}
+function note(s){el('message').textContent=s||'';el('message').style.display=s?'block':'none';}
+function fmt(p){return p.map(x=>Number(x).toFixed(6)).join(', ');}
+function coords(s){
+  const p=s.trim().split(/[,\s]+/).map(Number);
+  if(p.length!==2||p.some(v=>!Number.isFinite(v))||Math.abs(p[0])>90||Math.abs(p[1])>180)throw Error('Enter a latitude and longitude.');
+  return p;
+}
+function route(){return el('route').value.split(/\n+/).map(x=>x.trim()).filter(Boolean).map(coords);}
+function marker(p,label,color){
+  if(!map||!p)return;
+  drawn.push(L.circleMarker(p,{radius:8,color:'#fff',weight:2,fillColor:color,fillOpacity:1}).addTo(map).bindTooltip(label));
+}
+function redraw(){
+  if(!map)return;
+  drawn.forEach(x=>map.removeLayer(x));drawn=[];
+  try{let r=route();if(r.length>1)drawn.push(L.polyline(r,{color:'#006f78',weight:5}).addTo(map));}catch(e){}
+  try{marker(coords(el('origin').value),'Passenger','#2668b7');}catch(e){}
+  try{marker(coords(el('destination').value),'Destination','#8643b7');}catch(e){}
+  if(ride&&ride.last&&ride.last.match){
+    marker(ride.last.match.pickup,'Pickup','#17975b');
+    marker(ride.last.match.dropoff,'Dropoff','#8643b7');
+    if(ride.last.driver)marker(ride.last.driver.position,'Passing car','#ec9025');
+  }
+  if(driver&&driver.last&&driver.last.rides.length){
+    marker(driver.last.rides[0].match.pickup,'Pickup','#17975b');
+  }
+}
+if(window.L){
+ map=L.map('map').setView([59.32,18.07],14);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap contributors'}).addTo(map);
+ map.on('click',e=>{
+   const p=fmt([e.latlng.lat,e.latlng.lng]);
+   if(mode==='driver')el('route').value+=(el('route').value.trim()?'\n':'')+p;
+   else el(el('origin').value.trim()?'destination':'origin').value=p;
+   redraw();
+ });
+}else el('mapHint').textContent='Map unavailable; coordinates can still be entered manually.';
+function setMode(m){
+ mode=m;show('riderPanel',m==='rider');show('driverPanel',m==='driver');
+ el('tabRider').classList.toggle('active',m==='rider');
+ el('tabDriver').classList.toggle('active',m==='driver');
+ el('mapHint').textContent=m==='driver'?'Map: tap consecutive points along your route.':'Map: tap your destination.';
+ redraw();
+}
+el('tabRider').onclick=()=>setMode('rider');
+el('tabDriver').onclick=()=>setMode('driver');
+for(const id of ['origin','destination','route'])el(id).addEventListener('input',redraw);
+function gps(m){
+ if(!navigator.geolocation)return note('Geolocation unavailable.');
+ navigator.geolocation.getCurrentPosition(p=>{
+   const v=[p.coords.latitude,p.coords.longitude];let s=fmt(v);
+   if(m==='driver')el('route').value=s+(el('route').value.trim()?'\n'+el('route').value:'');
+   else el('origin').value=s;
+   map&&map.setView(v,15);redraw();note('');
+ },e=>note('Location unavailable: '+e.message),{enableHighAccuracy:true,timeout:12000});
+}
+el('gpsRider').onclick=()=>gps('rider');el('gpsDriver').onclick=()=>gps('driver');
+el('exampleRider').onclick=()=>{el('origin').value=fmt([59.32,18.065]);el('destination').value=fmt([59.32,18.086]);map&&map.setView([59.32,18.07],14);redraw();};
+el('exampleDriver').onclick=()=>{el('route').value=sampleRoute.map(fmt).join('\n');el('carLabel').value='Example car';map&&map.setView([59.32,18.07],14);redraw();};
+el('clear').onclick=()=>{el('route').value='';redraw();};
+async function api(path,body,token){
+ const response=await fetch('/api/'+path,{method:body===undefined?'GET':'POST',headers:Object.assign({},body===undefined?{}:{'Content-Type':'application/json'},token?{'X-HopOn-Token':token}:{}),body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});
+ const data=await response.json();
+ if(!response.ok)throw Error(data.error||'Service unavailable');
+ return data;
+}
+function displayRide(v){
+ if(!ride)return;
+ ride.last=v;show('ridePanel',true);
+ const labels={searching:'Looking for a car already heading your way…',assigned:'A car is matched. Walk to its pickup point.',boarded:'You are aboard.',completed:'Ride completed.',cancelled:'Ride cancelled.'};
+ el('rideStatus').textContent=labels[v.status]||v.status;
+ if(v.status==='assigned'&&v.waiting_seconds!==null)el('rideStatus').textContent+=' Driver waiting: '+v.waiting_seconds+' sec.';
+ el('walk').textContent=v.match?v.match.walk_m+' m':'—';
+ el('rideLength').textContent=v.match?v.match.ride_km+' km':'—';
+ el('rideFare').textContent=v.match?v.match.fare.total.toFixed(2)+' SEK':'—';
+ el('vehicle').textContent=v.driver?v.driver.label:'—';
+ el('board').disabled=v.status!=='assigned'||v.waiting_seconds===null;
+ el('cancel').disabled=!['searching','assigned'].includes(v.status);
+ if(['completed','cancelled'].includes(v.status)){localStorage.removeItem('hopon_ride');ride=null;}
+ redraw();
+}
+el('request').onclick=async()=>{
+ try{note('');let v=await api('rides',{origin:coords(el('origin').value),destination:coords(el('destination').value)});
+ ride={id:v.ride_id,token:v.token,last:null};localStorage.setItem('hopon_ride',JSON.stringify({id:ride.id,token:ride.token}));displayRide(v);
+ }catch(e){note(e.message);}
+};
+async function act(action){try{if(!ride)return;displayRide(await api('rides/'+ride.id+'/action',{action},ride.token));note('');}catch(e){note(e.message);}}
+el('board').onclick=()=>act('board');el('cancel').onclick=()=>act('cancel');
+function displayDriver(v){
+ if(!driver)return;
+ driver.last=v;show('driverActive',true);
+ el('driverStatus').textContent='Driver '+(v.driver.online?'online':'offline')+'; '+v.rides.length+' active pickup(s).';
+ const a=v.rides[0];
+ el('assignment').textContent=a?('Passenger '+a.status+'; pickup '+fmt(a.match.pickup)+'; example payout '+a.match.fare.driver_amount.toFixed(2)+' SEK.'):'No passengers assigned.';
+ el('arrive').disabled=!a||a.status!=='assigned';
+ el('complete').disabled=!a||a.status!=='boarded';
+ el('offline').textContent=v.driver.online?'Go offline':'Go online';
+ redraw();
+}
+async function pollDriver(){
+ if(!driver)return;
+ try{displayDriver(await api('drivers/'+driver.id+'/rides',undefined,driver.token));}
+ catch(e){if(e.message==='Driver session not found'){localStorage.removeItem('hopon_driver');driver=null;el('register').disabled=false;show('driverActive',false);}note(e.message);}
+}
+el('register').onclick=async()=>{
+ try{note('');const r=route(),seats=Number(el('seats').value);
+ if(r.length<2)throw Error('Add at least two route points.');
+ const v=await api('drivers',{route:r,position:r[0],label:el('carLabel').value,seats});
+ driver={id:v.driver_id,token:v.token,last:null};
+ localStorage.setItem('hopon_driver',JSON.stringify({id:driver.id,token:driver.token}));
+ el('register').disabled=true;await pollDriver();
+ }catch(e){note(e.message);}
+};
+el('arrive').onclick=async()=>{
+ try{const a=driver&&driver.last&&driver.last.rides[0];if(!a)return;
+ await api('drivers/'+driver.id,{position:a.match.pickup},driver.token);await pollDriver();note('');
+ }catch(e){note(e.message);}
+};
+el('offline').onclick=async()=>{
+ try{if(!driver)return;await api('drivers/'+driver.id,{online:!driver.last.driver.online},driver.token);await pollDriver();note('');}catch(e){note(e.message);}
+};
+el('complete').onclick=async()=>{
+ try{const a=driver&&driver.last&&driver.last.rides.find(v=>v.status==='boarded');if(!a)return;
+ await api('rides/'+a.id+'/action',{action:'complete'},driver.token);await pollDriver();note('');
+ }catch(e){note(e.message);}
+};
+async function pollRide(){
+ if(!ride)return;
+ try{displayRide(await api('rides/'+ride.id,undefined,ride.token));}
+ catch(e){if(e.message==='Ride session not found'){localStorage.removeItem('hopon_ride');ride=null;show('ridePanel',false);}note(e.message);}
+}
+if(ride){show('ridePanel',true);pollRide();}
+if(driver){el('register').disabled=true;show('driverActive',true);pollDriver();}
+setInterval(()=>{pollRide();pollDriver();},3000);
+</script>
+</body></html>
