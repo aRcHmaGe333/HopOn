@@ -201,6 +201,12 @@ class HopOn:
                     ride['excluded'].append(ride['match']['driver_id'])
                     ride.update(status='searching', match=None, arrived_at=None)
                     continue
+                off_route, car_progress, _ = projection(driver['route'], driver['position'])
+                _, pickup_progress, _ = projection(driver['route'], tuple(ride['match']['pickup']))
+                if off_route > 300 or car_progress > pickup_progress + PICKUP_ARRIVAL_M:
+                    ride['excluded'].append(driver['id'])
+                    ride.update(status='searching', match=None, arrived_at=None)
+                    continue
                 if distance_m(driver['position'], tuple(ride['match']['pickup'])) <= PICKUP_ARRIVAL_M:
                     if ride['arrived_at'] is None:
                         ride['arrived_at'] = now
