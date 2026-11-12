@@ -60,3 +60,35 @@ def test_bad_coords_and_cancel():
         e.request_ride({'origin': [91, 18], 'destination': [59, 18]})
     p = e.request_ride({'origin': [59.32, 18.065], 'destination': [59.32, 18.086]})
     assert e.action(p['ride_id'], p['token'], 'cancel')['status'] == 'cancelled'
+
+
+def test_seat_reserved_and_released():
+    now = [1000.0]
+    e = HopOn(clock=lambda: now[0])
+    e.register_driver({'route': R, 'seats': 1})
+    a = e.request_ride({'origin': [59.32, 18.065], 'destination': [59.32, 18.086]})
+    b = e.request_ride({'origin': [59.32, 18.066], 'destination': [59.32, 18.087]})
+    assert a['status'] == 'assigned' and b['status'] == 'searching'
+    e.action(a['ride_id'], a['token'], 'cancel')
+    assert e.get_ride(b['ride_id'], b['token'])['status'] == 'assigned'
+
+
+def test_driver_declines_then_other_driver_is_used():
+    now = [1000.0]
+    e = HopOn(clock=lambda: now[0])
+    d1 = e.register_driver({'route': R})
+    d2 = e.register_driver({'route': R})
+    a = e.request_ride({'origin': [59.32, 18.065], 'destination': [59.32, 18.086]})
+    first = a['match']['driver_id']
+    token = next(d['token'] for d in [d1, d2] if d['driver_id'] == first)
+    r = e.action(a['ride_id'], token, 'decline')
+    assert r['match']['driver_id'] != first
+
+
+def test_walking_live_update():
+    e = HopOn()
+    e.register_driver({'route': R})
+    a = e.request_ride({'origin': [59.321, 18.065], 'destination': [59.32, 18.086]})
+    initial = a['match']['walk_m']
+    r = e.update_passenger(a['ride_id'], a['token'], {'origin': [59.32, 18.065]})
+    assert r['match']['walk_m'] < initial
