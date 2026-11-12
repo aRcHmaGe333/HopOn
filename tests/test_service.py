@@ -113,3 +113,19 @@ def test_very_close_car_cannot_wait_for_long_walk():
     e.register_driver({'route': R, 'position': [59.32, 18.07]})
     ride = e.request_ride({'origin': [59.3219, 18.07], 'destination': R[3]})
     assert ride['status'] == 'searching'
+
+
+def test_passed_pickup_is_reassigned():
+    e = HopOn()
+    driver = e.register_driver({'route': R})
+    ride = e.request_ride({'origin': [59.32, 18.065], 'destination': R[3]})
+    e.update_driver(driver['driver_id'], driver['token'], {'position': [59.32, 18.085]})
+    assert e.get_ride(ride['ride_id'], ride['token'])['status'] == 'searching'
+
+
+def test_driver_deviation_is_reassigned():
+    e = HopOn()
+    driver = e.register_driver({'route': R})
+    ride = e.request_ride({'origin': [59.32, 18.065], 'destination': R[3]})
+    e.update_driver(driver['driver_id'], driver['token'], {'position': [59.325, 18.06]})
+    assert e.get_ride(ride['ride_id'], ride['token'])['status'] == 'searching'
