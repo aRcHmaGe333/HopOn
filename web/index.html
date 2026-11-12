@@ -18,7 +18,7 @@ button:disabled{opacity:.45;cursor:not-allowed}.full{width:100%;margin-top:12px}
 #message,.status{padding:12px;border-radius:8px;margin-top:14px;background:#edf6f4;line-height:1.5}
 #message{background:#f9e5e2;color:#8a2525;display:none}.hide{display:none!important}
 .metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.metrics>div{padding:10px;background:#f2f7f7;border-radius:8px}
-.metrics span{display:block;font-size:12px;color:#61767b}.metrics strong{display:block;margin-top:3px}
+.metrics span{display:block;font-size:12px;color:#61767b}.opt{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;margin:10px 0}.opt input{width:auto}.metrics strong{display:block;margin-top:3px}
 footer{max-width:1200px;margin:auto;color:#667b7e;padding:0 16px 22px;font-size:12px}
 @media(max-width:800px){main{display:flex;flex-direction:column}#map{height:360px}section.map-panel{order:-1}}
 </style>
@@ -34,7 +34,7 @@ footer{max-width:1200px;margin:auto;color:#667b7e;padding:0 16px 22px;font-size:
 <div class="row"><button id="gpsRider">My location</button><button id="exampleRider">Example trip</button></div>
 <label for="origin">Your location (latitude, longitude)</label><input id="origin" placeholder="59.320000, 18.065000">
 <label for="destination">Destination (latitude, longitude)</label><input id="destination" placeholder="59.320000, 18.086000">
-<button id="request" class="primary full">Find a passing ride</button>
+<label class="opt"><input type="checkbox" id="riderLive"> Update my walking position using GPS</label><button id="request" class="primary full">Find a passing ride</button>
 <div id="ridePanel" class="hide">
 <div id="rideStatus" class="status" aria-live="polite"></div>
 <div class="metrics">
@@ -51,11 +51,11 @@ footer{max-width:1200px;margin:auto;color:#667b7e;padding:0 16px 22px;font-size:
 <div class="row"><button id="gpsDriver">Start at my location</button><button id="exampleDriver">Example driver</button><button id="clear">Clear</button></div>
 <label for="route">Route points (one latitude, longitude pair per line)</label><textarea id="route" placeholder="59.320000, 18.050000&#10;59.320000, 18.060000&#10;59.320000, 18.090000"></textarea>
 <div class="row"><div><label for="carLabel">Car description</label><input id="carLabel" maxlength="60" placeholder="Blue hatchback"></div><div><label for="seats">Free seats</label><input id="seats" type="number" value="1" min="1" max="8"></div></div>
-<button id="register" class="primary full">Go online</button>
+<label class="opt"><input type="checkbox" id="driverLive"> Share my live GPS position while online</label><button id="register" class="primary full">Go online</button>
 <div id="driverActive" class="hide">
 <div id="driverStatus" class="status" aria-live="polite"></div>
 <div id="assignment" class="status"></div>
-<div class="row"><button id="arrive">Simulate arrival</button><button id="offline" class="danger">Go offline</button></div>
+<div class="row"><button id="arrive">Simulate arrival</button><button id="decline">Pass on this pickup</button><button id="offline" class="danger">Go offline</button></div>
 <button id="complete" class="full">Complete boarded ride</button>
 </div></div>
 <div id="message" role="alert"></div>
@@ -69,6 +69,7 @@ footer{max-width:1200px;margin:auto;color:#667b7e;padding:0 16px 22px;font-size:
 const el=id=>document.getElementById(id);
 const sampleRoute=[[59.32,18.05],[59.32,18.06],[59.32,18.075],[59.32,18.09]];
 let mode='rider',map=null,drawn=[],ride=JSON.parse(localStorage.getItem('hopon_ride')||'null'),driver=JSON.parse(localStorage.getItem('hopon_driver')||'null');
+let watchId=null,lastDriverGps=0,lastRiderGps=0;
 function show(id,v){el(id).classList.toggle('hide',!v);}
 function note(s){el('message').textContent=s||'';el('message').style.display=s?'block':'none';}
 function fmt(p){return p.map(x=>Number(x).toFixed(6)).join(', ');}
@@ -130,6 +131,21 @@ el('gpsRider').onclick=()=>gps('rider');el('gpsDriver').onclick=()=>gps('driver'
 el('exampleRider').onclick=()=>{el('origin').value=fmt([59.32,18.065]);el('destination').value=fmt([59.32,18.086]);map&&map.setView([59.32,18.07],14);redraw();};
 el('exampleDriver').onclick=()=>{el('route').value=sampleRoute.map(fmt).join('\n');el('carLabel').value='Example car';map&&map.setView([59.32,18.07],14);redraw();};
 el('clear').onclick=()=>{el('route').value='';redraw();};
+function trackGps(){
+ if(watchId!==null){navigator.geolocation.clearWatch(watchId);watchId=null;}
+ if(!navigator.geolocation||(!el('riderLive').checked&&!el('driverLive').checked))return;
+ watchId=navigator.geolocation.watchPosition(async p=>{
+   const point=[p.coords.latitude,p.coords.longitude],now=Date.now();
+   if(driver&&el('driverLive').checked&&driver.last?.driver?.online&&now-lastDriverGps>4000){
+      lastDriverGps=now;try{await api('drivers/'+driver.id,{position:point},driver.token);}catch(e){note(e.message);}
+   }
+   if(ride&&el('riderLive').checked&&['assigned','searching'].includes(ride.last?.status)&&now-lastRiderGps>4000){
+      lastRiderGps=now;try{displayRide(await api('rides/'+ride.id,{origin:point},ride.token));}catch(e){note(e.message);}
+   }
+ },()=>{}, {enableHighAccuracy:true,maximumAge:3000,timeout:15000});
+}
+el('driverLive').onchange=trackGps;
+el('riderLive').onchange=trackGps;
 async function api(path,body,token){
  const response=await fetch('/api/'+path,{method:body===undefined?'GET':'POST',headers:Object.assign({},body===undefined?{}:{'Content-Type':'application/json'},token?{'X-HopOn-Token':token}:{}),body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});
  const data=await response.json();
@@ -153,7 +169,7 @@ function displayRide(v){
 }
 el('request').onclick=async()=>{
  try{note('');let v=await api('rides',{origin:coords(el('origin').value),destination:coords(el('destination').value)});
- ride={id:v.ride_id,token:v.token,last:null};localStorage.setItem('hopon_ride',JSON.stringify({id:ride.id,token:ride.token}));displayRide(v);
+ ride={id:v.ride_id,token:v.token,last:null};localStorage.setItem('hopon_ride',JSON.stringify({id:ride.id,token:ride.token}));displayRide(v);trackGps();
  }catch(e){note(e.message);}
 };
 async function act(action){try{if(!ride)return;displayRide(await api('rides/'+ride.id+'/action',{action},ride.token));note('');}catch(e){note(e.message);}}
@@ -165,6 +181,7 @@ function displayDriver(v){
  const a=v.rides[0];
  el('assignment').textContent=a?('Passenger '+a.status+'; pickup '+fmt(a.match.pickup)+'; example payout '+a.match.fare.driver_amount.toFixed(2)+' SEK.'):'No passengers assigned.';
  el('arrive').disabled=!a||a.status!=='assigned';
+ el('decline').disabled=!a||a.status!=='assigned';
  el('complete').disabled=!a||a.status!=='boarded';
  el('offline').textContent=v.driver.online?'Go offline':'Go online';
  redraw();
@@ -180,13 +197,17 @@ el('register').onclick=async()=>{
  const v=await api('drivers',{route:r,position:r[0],label:el('carLabel').value,seats});
  driver={id:v.driver_id,token:v.token,last:null};
  localStorage.setItem('hopon_driver',JSON.stringify({id:driver.id,token:driver.token}));
- el('register').disabled=true;await pollDriver();
+ el('register').disabled=true;await pollDriver();trackGps();
  }catch(e){note(e.message);}
 };
 el('arrive').onclick=async()=>{
  try{const a=driver&&driver.last&&driver.last.rides[0];if(!a)return;
  await api('drivers/'+driver.id,{position:a.match.pickup},driver.token);await pollDriver();note('');
  }catch(e){note(e.message);}
+};
+el('decline').onclick=async()=>{
+ try{const a=driver&&driver.last&&driver.last.rides[0];if(!a)return;
+ await api('rides/'+a.id+'/action',{action:'decline'},driver.token);await pollDriver();note('');}catch(e){note(e.message);}
 };
 el('offline').onclick=async()=>{
  try{if(!driver)return;await api('drivers/'+driver.id,{online:!driver.last.driver.online},driver.token);await pollDriver();note('');}catch(e){note(e.message);}
